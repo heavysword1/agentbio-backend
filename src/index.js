@@ -10,6 +10,9 @@ const compoundRouter = require('./routes/compound');
 const geneRouter = require('./routes/gene');
 const druginfoRouter = require('./routes/druginfo');
 const targetsRouter = require('./routes/targets');
+const uniprotRouter = require('./routes/uniprot');
+const approvalsRouter = require('./routes/approvals');
+const structureRouter = require('./routes/structure');
 const mcpRouter = require('./routes/mcp');
 
 const app = express();
@@ -81,6 +84,56 @@ try {
         extensions: { bazaar: { info: { description: 'NCBI Gene database — search by gene name/symbol. Returns gene function, chromosome location, organism, and description.', input: { type: 'http', method: 'GET', queryParams: { q: 'BRCA1', organism: 'Homo sapiens', limit: '5' }, schema: { properties: { q: { type: 'string', description: 'Gene name or symbol (e.g. BRCA1, TP53, EGFR)' }, organism: { type: 'string', description: 'Organism (default: Homo sapiens)' }, limit: { type: 'string' } }, required: [] } }, output: { example: { success: true, query: 'BRCA1', genes: [{ symbol: 'BRCA1', description: 'BRCA1 DNA repair associated', chromosome: '17', location: '17q21.31', aliases: ['FANCS', 'RNF53'] }] } } } } }
       },
 
+      'GET /x402/bio/uniprot': {
+        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
+        description: 'UniProt protein sequences and function data — accession, gene name, sequence length, organism, and function summary.',
+        extensions: { bazaar: { info: {
+          description: 'UniProt protein sequences and function data. Search by protein or gene name to get accession IDs, sequence length, organism, and functional descriptions.',
+          input: { type: 'http', method: 'GET',
+            queryParams: { q: 'BRCA1', organism: 'human', limit: '5' },
+            schema: { properties: {
+              q: { type: 'string', description: 'Protein or gene name (e.g. BRCA1, TP53, insulin)' },
+              organism: { type: 'string', description: 'Organism name or taxon ID (human, mouse, rat, yeast, or numeric taxon ID). Default: human' },
+              limit: { type: 'string', description: 'Number of results (default 5, max 20)' }
+            }, required: [] }
+          },
+          output: { example: { success: true, query: 'BRCA1', organism: 'human', count: 1, proteins: [{ accession: 'P38398', name: 'Breast cancer type 1 susceptibility protein', gene: 'BRCA1', length: 1863, organism: 'Homo sapiens', function: 'E3 ubiquitin-protein ligase...', url: 'https://www.uniprot.org/uniprot/P38398' }], source: 'UniProt' } }
+        }}}
+      },
+
+      'GET /x402/bio/approvals': {
+        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
+        description: 'FDA drug approval history and NDA applications — application number, applicant, brand name, dosage form, first approval date.',
+        extensions: { bazaar: { info: {
+          description: 'FDA drug approval history and NDA/ANDA applications from OpenFDA. Get applicant, brand name, dosage form, first approval date, and submission history.',
+          input: { type: 'http', method: 'GET',
+            queryParams: { name: 'metformin', limit: '5' },
+            schema: { properties: {
+              name: { type: 'string', description: 'Drug name — brand or generic (e.g. metformin, pembrolizumab, aspirin)' },
+              type: { type: 'string', description: 'brand, generic, or all (default: all)' },
+              limit: { type: 'string', description: 'Number of results (default 5, max 10)' }
+            }, required: [] }
+          },
+          output: { example: { success: true, drug_name: 'metformin', count: 5, applications: [{ application_number: 'NDA021202', applicant: 'BRISTOL MYERS SQUIBB', brand_name: 'GLUCOPHAGE', generic_name: 'METFORMIN HYDROCHLORIDE', dosage_form: 'TABLET', first_approved: '19941229', total_submissions: 12, latest_action: { date: '20230101', type: 'AP' } }], source: 'FDA Drug Approvals Database' } }
+        }}}
+      },
+
+      'GET /x402/bio/structure': {
+        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
+        description: 'RCSB PDB 3D protein structure data — PDB ID, title, experimental method, resolution, chains, molecular weight.',
+        extensions: { bazaar: { info: {
+          description: 'RCSB Protein Data Bank 3D structure data. Search by protein/gene name or PDB ID to get structure title, experimental method (X-ray, Cryo-EM), resolution, and molecular weight.',
+          input: { type: 'http', method: 'GET',
+            queryParams: { q: 'BRCA1', limit: '5' },
+            schema: { properties: {
+              q: { type: 'string', description: 'Protein/gene name (e.g. BRCA1, insulin) or 4-character PDB ID (e.g. 1A8E)' },
+              limit: { type: 'string', description: 'Number of results (default 5, max 10)' }
+            }, required: [] }
+          },
+          output: { example: { success: true, query: 'BRCA1', count: 3, structures: [{ pdb_id: '1JM7', title: 'Crystal structure of BRCA1 BRCT domains', method: 'X-RAY DIFFRACTION', resolution_angstrom: 2.8, chains: 2, molecular_weight: 45000, url: 'https://www.rcsb.org/structure/1JM7' }], source: 'RCSB Protein Data Bank' } }
+        }}}
+      },
+
       'GET /x402/bio/targets': {
         accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
         description: 'Drug target and bioactivity data from ChEMBL (EMBL-EBI) — ChEMBL ID, max clinical phase, molecular properties, indication class.',
@@ -112,5 +165,8 @@ app.use('/x402/bio/compound', compoundRouter);
 app.use('/x402/bio/gene', geneRouter);
 app.use('/x402/bio/druginfo', druginfoRouter);
 app.use('/x402/bio/targets', targetsRouter);
+app.use('/x402/bio/uniprot', uniprotRouter);
+app.use('/x402/bio/approvals', approvalsRouter);
+app.use('/x402/bio/structure', structureRouter);
 
 app.listen(PORT, () => console.log(`AgentBio running on port ${PORT}`));
