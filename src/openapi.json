@@ -1,0 +1,230 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AgentBio",
+    "version": "1.0.0",
+    "description": "Biomedical drug and compound data API with x402 micropayments. Powered by PubChem (NIH), OpenFDA, and ChEMBL (EMBL-EBI).",
+    "contact": {
+      "name": "Ocean Digital Group",
+      "url": "https://memoryapi.org"
+    }
+  },
+  "servers": [
+    { "url": "https://bio.memoryapi.org", "description": "Production" }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "operationId": "healthCheck",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "service": { "type": "string", "example": "agentbio" },
+                    "port": { "type": "integer", "example": 3022 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp": {
+      "get": {
+        "summary": "MCP server info",
+        "operationId": "mcpInfo",
+        "security": [],
+        "responses": {
+          "200": { "description": "MCP server metadata" }
+        }
+      },
+      "post": {
+        "summary": "MCP JSON-RPC endpoint",
+        "operationId": "mcpCall",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "jsonrpc": { "type": "string", "example": "2.0" },
+                  "method": { "type": "string", "example": "tools/call" },
+                  "params": { "type": "object" },
+                  "id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "JSON-RPC response" }
+        }
+      }
+    },
+    "/x402/bio/compound": {
+      "get": {
+        "summary": "Drug/compound data from PubChem",
+        "operationId": "getCompound",
+        "description": "Look up any drug or chemical compound by name or PubChem CID. Returns molecular formula, weight, SMILES, InChI, description, and synonyms.",
+        "x-price": "$0.005 USDC",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Drug or compound name (e.g. aspirin, caffeine, ibuprofen)",
+            "schema": { "type": "string", "default": "aspirin" }
+          },
+          {
+            "name": "cid",
+            "in": "query",
+            "description": "PubChem CID number (alternative to name)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Compound data from PubChem",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "name": { "type": "string" },
+                    "cid": { "type": "integer" },
+                    "formula": { "type": "string" },
+                    "molecular_weight": { "type": "string" },
+                    "smiles": { "type": "string" },
+                    "inchi": { "type": "string" },
+                    "description": { "type": "string", "nullable": true },
+                    "synonyms": { "type": "array", "items": { "type": "string" } },
+                    "source_url": { "type": "string" },
+                    "source": { "type": "string", "example": "PubChem / NIH" }
+                  }
+                }
+              }
+            }
+          },
+          "402": { "description": "Payment required (x402)" }
+        }
+      }
+    },
+    "/x402/bio/druginfo": {
+      "get": {
+        "summary": "Drug label and safety info from OpenFDA",
+        "operationId": "getDrugInfo",
+        "description": "Get drug label, adverse events, or recall data from OpenFDA. Returns brand names, generic name, indications, warnings, dosage, and drug interactions.",
+        "x-price": "$0.005 USDC",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Drug name (e.g. metformin, aspirin, lisinopril)",
+            "schema": { "type": "string", "default": "metformin" }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Data type: label (default), adverse_events, or recalls",
+            "schema": { "type": "string", "enum": ["label", "adverse_events", "recalls"], "default": "label" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Drug info from OpenFDA",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "drug_name": { "type": "string" },
+                    "type": { "type": "string" },
+                    "brand_names": { "type": "array", "items": { "type": "string" } },
+                    "generic_name": { "type": "string", "nullable": true },
+                    "indications": { "type": "string", "nullable": true },
+                    "warnings": { "type": "string", "nullable": true },
+                    "interactions": { "type": "string", "nullable": true },
+                    "source": { "type": "string", "example": "OpenFDA" }
+                  }
+                }
+              }
+            }
+          },
+          "402": { "description": "Payment required (x402)" }
+        }
+      }
+    },
+    "/x402/bio/targets": {
+      "get": {
+        "summary": "Drug target and bioactivity data from ChEMBL",
+        "operationId": "getDrugTargets",
+        "description": "Get drug target and bioactivity data from ChEMBL (EMBL-EBI). Returns ChEMBL ID, max clinical phase, molecule type, molecular properties, and indication class.",
+        "x-price": "$0.005 USDC",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Drug or compound name (e.g. ibuprofen, atorvastatin)",
+            "schema": { "type": "string", "default": "ibuprofen" }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Data type: molecule (default) or activity",
+            "schema": { "type": "string", "enum": ["molecule", "activity"], "default": "molecule" }
+          },
+          {
+            "name": "chembl_id",
+            "in": "query",
+            "description": "ChEMBL ID for activity lookup (e.g. CHEMBL521)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Drug target data from ChEMBL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "name": { "type": "string" },
+                    "chembl_id": { "type": "string" },
+                    "max_phase": { "type": "number", "nullable": true },
+                    "molecule_type": { "type": "string" },
+                    "properties": { "type": "object" },
+                    "indications": { "type": "array", "items": { "type": "string" } },
+                    "source": { "type": "string", "example": "ChEMBL / EMBL-EBI" }
+                  }
+                }
+              }
+            }
+          },
+          "402": { "description": "Payment required (x402)" }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "summary": "OpenAPI specification",
+        "operationId": "getOpenAPI",
+        "security": [],
+        "responses": {
+          "200": { "description": "OpenAPI JSON spec" }
+        }
+      }
+    }
+  }
+}
