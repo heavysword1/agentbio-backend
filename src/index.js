@@ -7,6 +7,7 @@ const { ExactEvmScheme } = require('@x402/evm/exact/server');
 const { HTTPFacilitatorClient } = require('@x402/core/server');
 
 const compoundRouter = require('./routes/compound');
+const geneRouter = require('./routes/gene');
 const druginfoRouter = require('./routes/druginfo');
 const targetsRouter = require('./routes/targets');
 const mcpRouter = require('./routes/mcp');
@@ -74,6 +75,12 @@ try {
         }}}
       },
 
+      'GET /x402/bio/gene': {
+        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
+        description: 'NCBI Gene database — gene function, chromosome location, aliases, and disease associations.',
+        extensions: { bazaar: { info: { description: 'NCBI Gene database — search by gene name/symbol. Returns gene function, chromosome location, organism, and description.', input: { type: 'http', method: 'GET', queryParams: { q: 'BRCA1', organism: 'Homo sapiens', limit: '5' }, schema: { properties: { q: { type: 'string', description: 'Gene name or symbol (e.g. BRCA1, TP53, EGFR)' }, organism: { type: 'string', description: 'Organism (default: Homo sapiens)' }, limit: { type: 'string' } }, required: [] } }, output: { example: { success: true, query: 'BRCA1', genes: [{ symbol: 'BRCA1', description: 'BRCA1 DNA repair associated', chromosome: '17', location: '17q21.31', aliases: ['FANCS', 'RNF53'] }] } } } } }
+      },
+
       'GET /x402/bio/targets': {
         accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
         description: 'Drug target and bioactivity data from ChEMBL (EMBL-EBI) — ChEMBL ID, max clinical phase, molecular properties, indication class.',
@@ -102,6 +109,7 @@ try {
 }
 
 app.use('/x402/bio/compound', compoundRouter);
+app.use('/x402/bio/gene', geneRouter);
 app.use('/x402/bio/druginfo', druginfoRouter);
 app.use('/x402/bio/targets', targetsRouter);
 
