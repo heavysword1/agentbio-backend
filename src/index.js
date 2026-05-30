@@ -4,6 +4,7 @@ const cors = require('cors');
 const { paymentMiddleware, x402ResourceServer } = require('@x402/express');
 const { bazaarResourceServerExtension } = require('@x402/extensions');
 const { ExactEvmScheme } = require('@x402/evm/exact/server');
+const { UptoEvmScheme } = require('@x402/evm/upto/server');
 const { HTTPFacilitatorClient } = require('@x402/core/server');
 
 const compoundRouter = require('./routes/compound');
@@ -42,12 +43,13 @@ try {
   const facilitatorClient = new HTTPFacilitatorClient({ url: rawConfig.url, createAuthHeaders: rawConfig.createAuthHeaders });
   const x402Server = new x402ResourceServer(facilitatorClient)
     .register(X402_NETWORK, new ExactEvmScheme())
+    .register(X402_NETWORK, new UptoEvmScheme())
     .registerExtension(bazaarResourceServerExtension);
 
   app.use(paymentMiddleware(
     {
       'GET /x402/bio/compound': {
-        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
+        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }, { scheme: 'upto', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
         description: 'Drug/compound data from PubChem (NIH) — CID, IUPAC name, molecular formula, molecular weight, SMILES, InChI, description, and synonyms.',
         extensions: { bazaar: { info: {
           description: 'Drug and compound data from PubChem (NIH). Look up any drug or chemical compound by name or CID to get molecular formula, weight, SMILES, InChI, and synonyms.',
@@ -63,7 +65,7 @@ try {
       },
 
       'GET /x402/bio/druginfo': {
-        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
+        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }, { scheme: 'upto', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
         description: 'Drug label, safety info, adverse events, and recall data from OpenFDA — indications, warnings, dosage, interactions.',
         extensions: { bazaar: { info: {
           description: 'Drug label and safety information from OpenFDA. Get brand names, generic name, indications, warnings, dosage instructions, drug interactions, and pregnancy info.',
@@ -79,13 +81,13 @@ try {
       },
 
       'GET /x402/bio/gene': {
-        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
+        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }, { scheme: 'upto', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
         description: 'NCBI Gene database — gene function, chromosome location, aliases, and disease associations.',
         extensions: { bazaar: { info: { description: 'NCBI Gene database — search by gene name/symbol. Returns gene function, chromosome location, organism, and description.', input: { type: 'http', method: 'GET', queryParams: { q: 'BRCA1', organism: 'Homo sapiens', limit: '5' }, schema: { properties: { q: { type: 'string', description: 'Gene name or symbol (e.g. BRCA1, TP53, EGFR)' }, organism: { type: 'string', description: 'Organism (default: Homo sapiens)' }, limit: { type: 'string' } }, required: [] } }, output: { example: { success: true, query: 'BRCA1', genes: [{ symbol: 'BRCA1', description: 'BRCA1 DNA repair associated', chromosome: '17', location: '17q21.31', aliases: ['FANCS', 'RNF53'] }] } } } } }
       },
 
       'GET /x402/bio/uniprot': {
-        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
+        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }, { scheme: 'upto', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
         description: 'UniProt protein sequences and function data — accession, gene name, sequence length, organism, and function summary.',
         extensions: { bazaar: { info: {
           description: 'UniProt protein sequences and function data. Search by protein or gene name to get accession IDs, sequence length, organism, and functional descriptions.',
@@ -102,7 +104,7 @@ try {
       },
 
       'GET /x402/bio/approvals': {
-        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
+        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }, { scheme: 'upto', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
         description: 'FDA drug approval history and NDA applications — application number, applicant, brand name, dosage form, first approval date.',
         extensions: { bazaar: { info: {
           description: 'FDA drug approval history and NDA/ANDA applications from OpenFDA. Get applicant, brand name, dosage form, first approval date, and submission history.',
@@ -119,7 +121,7 @@ try {
       },
 
       'GET /x402/bio/structure': {
-        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
+        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }, { scheme: 'upto', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
         description: 'RCSB PDB 3D protein structure data — PDB ID, title, experimental method, resolution, chains, molecular weight.',
         extensions: { bazaar: { info: {
           description: 'RCSB Protein Data Bank 3D structure data. Search by protein/gene name or PDB ID to get structure title, experimental method (X-ray, Cryo-EM), resolution, and molecular weight.',
@@ -135,7 +137,7 @@ try {
       },
 
       'GET /x402/bio/targets': {
-        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
+        accepts: [{ scheme: 'exact', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }, { scheme: 'upto', price: '$0.005', network: X402_NETWORK, payTo: PAY_TO }],
         description: 'Drug target and bioactivity data from ChEMBL (EMBL-EBI) — ChEMBL ID, max clinical phase, molecular properties, indication class.',
         extensions: { bazaar: { info: {
           description: 'Drug target and bioactivity data from ChEMBL (EMBL-EBI). Get ChEMBL ID, max clinical phase, molecule type, molecular properties (MW, AlogP), and indication class.',
